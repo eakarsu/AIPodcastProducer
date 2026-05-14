@@ -4,11 +4,25 @@ const auth = require('../middleware/auth');
 function createCrudRouter(tableName, columns) {
   const router = require('express').Router();
 
-  // GET all
+  // GET all with pagination
   router.get('/', auth, async (req, res) => {
     try {
-      const result = await pool.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
-      res.json(result.rows);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = (page - 1) * limit;
+
+      const countResult = await pool.query(`SELECT COUNT(*) FROM ${tableName}`);
+      const total = parseInt(countResult.rows[0].count);
+
+      const result = await pool.query(
+        `SELECT * FROM ${tableName} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+
+      res.json({
+        data: result.rows,
+        pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

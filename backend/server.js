@@ -1,11 +1,19 @@
 require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
 
-app.use(cors());
+// Security headers
+app.use(helmet());
+
+// CORS
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
@@ -27,6 +35,29 @@ app.use('/api/seo', require('./routes/seo'));
 app.use('/api/ai', require('./routes/ai'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+
+// === Custom Feature Mounts (batch_06) ===
+app.use('/api/cf-agentic-episode-orchestration', require('./routes/customFeat01_AgenticEpisodeOrchestration'));
+app.use('/api/cf-real-time-transcription-editing', require('./routes/customFeat02_RealTimeTranscriptionEditing'));
+app.use('/api/cf-audience-intelligence', require('./routes/customFeat03_AudienceIntelligence'));
+app.use('/api/cf-guest-matching', require('./routes/customFeat04_GuestMatching'));
+app.use('/api/cf-multi-platform-publishing-orchestration', require('./routes/customFeat05_MultiPlatformPublishingOrchestration'));
+
+
+// === Batch 06 Gaps & Frontend Mounts ===
+app.use('/api/gap-guests-without-guest', require('./routes/gapFeat_guests_without_guest'));
+app.use('/api/gap-episodes-without-episode', require('./routes/gapFeat_episodes_without_episode'));
+app.use('/api/gap-analytics-without-audience', require('./routes/gapFeat_analytics_without_audience'));
+app.use('/api/gap-no-integration-with-podcast-hosts-buzzsprout-ancho', require('./routes/gapFeat_no_integration_with_podcast_hosts_buzzsprout_ancho'));
+app.use('/api/gap-no-audience-management-email-lists-community', require('./routes/gapFeat_no_audience_management_email_lists_community'));
+app.use('/api/gap-no-monetization-features-sponsorship-tracking-affi', require('./routes/gapFeat_no_monetization_features_sponsorship_tracking_affi'));
+app.use('/api/gap-limited-analytics-listener-growth-retention', require('./routes/gapFeat_limited_analytics_listener_growth_retention'));
+app.use('/api/gap-no-integration-with-video-platforms-youtube', require('./routes/gapFeat_no_integration_with_video_platforms_youtube'));
+app.use('/api/gap-no-notifications-module-grep-0', require('./routes/gapFeat_no_notifications_module_grep_0'));
+app.use('/api/gap-no-audit-logging-grep-0', require('./routes/gapFeat_no_audit_logging_grep_0'));
+app.use('/api/gap-no-webhooks-for-episode-publish-events', require('./routes/gapFeat_no_webhooks_for_episode_publish_events'));
+app.use('/api/gap-no-file-upload-for-audio-masters', require('./routes/gapFeat_no_file_upload_for_audio_masters'));
 
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
