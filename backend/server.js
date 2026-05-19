@@ -59,6 +59,12 @@ app.use('/api/gap-no-audit-logging-grep-0', require('./routes/gapFeat_no_audit_l
 app.use('/api/gap-no-webhooks-for-episode-publish-events', require('./routes/gapFeat_no_webhooks_for_episode_publish_events'));
 app.use('/api/gap-no-file-upload-for-audio-masters', require('./routes/gapFeat_no_file_upload_for_audio_masters'));
 
+// === Custom Views (4 endpoints — VIZ + NON-VIZ) ===
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 handler (must be after all routes)
+app.use((req, res) => res.status(404).json({ error: 'Not found', path: req.originalUrl }));
+
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });

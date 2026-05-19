@@ -38,6 +38,7 @@ import GapNoNotificationsModuleGrep0Page from './pages/GapNoNotificationsModuleG
 import GapNoAuditLoggingGrep0Page from './pages/GapNoAuditLoggingGrep0Page';
 import GapNoWebhooksForEpisodePublishEventsPage from './pages/GapNoWebhooksForEpisodePublishEventsPage';
 import GapNoFileUploadForAudioMastersPage from './pages/GapNoFileUploadForAudioMastersPage';
+import CustomViewsPage from './pages/CustomViewsPage';
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="ai-listener-growth-strategy" element={<ListenerGrowthStrategyPage />} />
           <Route path="ai-multiplatform-publishing" element={<MultiPlatformPublishingPage />} />
           <Route path="ai-advanced-tools" element={<AdvancedAIToolsPage />} />
+          <Route path="custom-views" element={<CustomViewsPage />} />
         </Route>
       
           {/* // === Batch 06 Gaps & Frontend Mounts === */}

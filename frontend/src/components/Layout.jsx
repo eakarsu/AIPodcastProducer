@@ -9,6 +9,7 @@ const navItems = [
     { path: '/guests', label: 'Guest Management', icon: '👥' },
     { path: '/calendar', label: 'Content Calendar', icon: '📅' },
     { path: '/templates', label: 'Episode Templates', icon: '📋' },
+    { path: '/custom-views', label: 'Podcast Views', icon: '🎧' },
   // === Batch 06 Gaps & Frontend Mounts ===
   { path: '/cf-agentic-episode-orchestration', label: 'Agentic episode orchestration', icon: '✨' },
   { path: '/cf-real-time-transcription-editing', label: 'Real-time transcription + editing', icon: '✨' },
