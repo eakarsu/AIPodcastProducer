@@ -254,10 +254,22 @@ export default function FeaturePage({ feature, title, aiAction }) {
   const config = featureConfig[feature];
   const aiConfig = aiAction ? aiActionConfig[aiAction] : null;
 
-  const fetchItems = useCallback(async () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchItems = useCallback(async (p = 1) => {
     try {
-      const res = await api.get(`/${feature}`);
-      setItems(res.data);
+      const res = await api.get(`/${feature}?page=${p}&limit=20`);
+      // Handle both paginated { data, pagination } and legacy array responses
+      if (res.data && res.data.data) {
+        setItems(res.data.data);
+        setTotalPages(res.data.pagination?.totalPages || 1);
+        setTotalItems(res.data.pagination?.total || res.data.data.length);
+      } else if (Array.isArray(res.data)) {
+        setItems(res.data);
+        setTotalItems(res.data.length);
+      }
     } catch (err) {
       toast.error('Failed to load data');
     }
@@ -271,7 +283,8 @@ export default function FeaturePage({ feature, title, aiAction }) {
     setEditItem(null);
     setShowAI(false);
     setAiResult(null);
-    fetchItems();
+    setPage(1);
+    fetchItems(1);
   }, [feature, fetchItems]);
 
   const handleDelete = async (id) => {
@@ -280,7 +293,7 @@ export default function FeaturePage({ feature, title, aiAction }) {
       await api.delete(`/${feature}/${id}`);
       toast.success('Deleted successfully');
       setSelectedItem(null);
-      fetchItems();
+      fetchItems(page);
     } catch (err) {
       toast.error('Delete failed');
     }
@@ -299,7 +312,7 @@ export default function FeaturePage({ feature, title, aiAction }) {
       setShowForm(false);
       setEditItem(null);
       setFormData({});
-      fetchItems();
+      fetchItems(page);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Save failed');
     }
@@ -364,7 +377,7 @@ export default function FeaturePage({ feature, title, aiAction }) {
       <div className="page-header">
         <div>
           <h2>{title}</h2>
-          <p className="subtitle">{items.length} items</p>
+          <p className="subtitle">{totalItems} items</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           {aiAction && (
@@ -487,6 +500,13 @@ export default function FeaturePage({ feature, title, aiAction }) {
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, padding: '16px 0' }}>
+              <button className="btn btn-secondary" onClick={() => { const np = Math.max(1, page - 1); setPage(np); fetchItems(np); }} disabled={page === 1}>Previous</button>
+              <span style={{ fontSize: 14, color: '#6b7280' }}>Page {page} of {totalPages}</span>
+              <button className="btn btn-secondary" onClick={() => { const np = Math.min(totalPages, page + 1); setPage(np); fetchItems(np); }} disabled={page === totalPages}>Next</button>
+            </div>
+          )}
         </div>
       )}
 
