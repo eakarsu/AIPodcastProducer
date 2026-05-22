@@ -39,6 +39,11 @@ import GapNoAuditLoggingGrep0Page from './pages/GapNoAuditLoggingGrep0Page';
 import GapNoWebhooksForEpisodePublishEventsPage from './pages/GapNoWebhooksForEpisodePublishEventsPage';
 import GapNoFileUploadForAudioMastersPage from './pages/GapNoFileUploadForAudioMastersPage';
 import CustomViewsPage from './pages/CustomViewsPage';
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +75,10 @@ export default function App() {
     <BrowserRouter>
       <Toaster position="top-right" toastOptions={{ className: 'toast-custom', duration: 3000 }} />
       <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
         <Route path="/" element={user ? <Layout user={user} onLogout={handleLogout} /> : <Navigate to="/login" />}>
           <Route index element={<Dashboard />} />
