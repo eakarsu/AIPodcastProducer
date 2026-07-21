@@ -2,6 +2,10 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../models/db');
+const JWT_SECRET = String(process.env.JWT_SECRET || '');
+if (JWT_SECRET.length < 32 || /replace|change|example|generate|secret-key-2024/i.test(JWT_SECRET)) {
+  throw new Error('JWT_SECRET must be a non-placeholder value of at least 32 characters.');
+}
 
 router.post('/register', async (req, res) => {
   try {
@@ -11,7 +15,7 @@ router.post('/register', async (req, res) => {
       'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name',
       [email, hashedPassword, name]
     );
-    const token = jwt.sign({ id: result.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: result.rows[0].id, role: 'producer' }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: result.rows[0], token });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already exists' });
@@ -28,7 +32,7 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, result.rows[0].password);
     if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: result.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: result.rows[0].id, role: result.rows[0].role || 'producer' }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: { id: result.rows[0].id, email: result.rows[0].email, name: result.rows[0].name }, token });
   } catch (err) {
     res.status(500).json({ error: err.message });

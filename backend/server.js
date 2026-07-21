@@ -2,6 +2,11 @@ require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { validateRuntime } = require('./governance/runtime');
+const { createProviderGate } = require('./governance/providerGate');
+const governanceRouter = require('./governance/router');
+
+validateRuntime();
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
@@ -10,14 +15,15 @@ const PORT = process.env.BACKEND_PORT || 3001;
 app.use(helmet());
 
 // CORS
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
-}));
+const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((value) => value.trim()).filter(Boolean);
+app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error('Origin not allowed by CORS')), credentials: true }));
 app.use(express.json({ limit: '10mb' }));
+app.use(createProviderGate(['/api/ai', '/api/gap', '/api/cf']));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.use('/api', require('./middleware/auth'));
 app.use('/api/episodes', require('./routes/episodes'));
 app.use('/api/guests', require('./routes/guests'));
 app.use('/api/scripts', require('./routes/scripts'));
@@ -33,6 +39,7 @@ app.use('/api/transcripts', require('./routes/transcripts'));
 app.use('/api/social-posts', require('./routes/socialPosts'));
 app.use('/api/seo', require('./routes/seo'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/governed-podcast-releases', governanceRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
