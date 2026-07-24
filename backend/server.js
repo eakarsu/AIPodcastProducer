@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const { validateRuntime } = require('./governance/runtime');
 const { createProviderGate } = require('./governance/providerGate');
 const governanceRouter = require('./governance/router');
+const { bootstrapRuntime } = require('./runtimeBootstrap');
 
 validateRuntime();
 
@@ -18,7 +19,7 @@ app.use(helmet());
 const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((value) => value.trim()).filter(Boolean);
 app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error('Origin not allowed by CORS')), credentials: true }));
 app.use(express.json({ limit: '10mb' }));
-app.use(createProviderGate(['/api/ai', '/api/gap', '/api/cf']));
+app.use(createProviderGate(['/api/gap', '/api/cf']));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -72,6 +73,14 @@ app.use('/api/custom-views', require('./routes/customViews'));
 // 404 handler (must be after all routes)
 app.use((req, res) => res.status(404).json({ error: 'Not found', path: req.originalUrl }));
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+async function start() {
+  await bootstrapRuntime();
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}
+
+start().catch((error) => {
+  console.error('Failed to start AI Podcast Producer:', error);
+  process.exit(1);
 });

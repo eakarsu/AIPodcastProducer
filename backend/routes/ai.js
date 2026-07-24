@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const https = require('https');
 const auth = require('../middleware/auth');
 const { aiRateLimiter } = require('../middleware/rateLimiter');
 const pool = require('../models/db');
@@ -9,12 +8,20 @@ class AIKeyMissingError extends Error {
   constructor(msg) { super(msg || 'AI not configured: OPENROUTER_API_KEY is missing'); this.code = 'AI_KEY_MISSING'; }
 }
 
-function callOpenRouter(prompt, systemPrompt) {
+async function callOpenRouter(prompt, systemPrompt) {
   if (!process.env.OPENROUTER_API_KEY) {
-    return Promise.reject(new AIKeyMissingError());
+    throw new AIKeyMissingError();
   }
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({
+    const baseUrl = (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:3000',
+        'X-Title': 'AI Podcast Producer'
+      },
+      body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -22,41 +29,14 @@ function callOpenRouter(prompt, systemPrompt) {
       ],
       max_tokens: 2000,
       temperature: 0.7
+      }),
     });
-
-    const options = {
-      hostname: 'openrouter.ai',
-      path: '/api/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'http://localhost:3000',
-        'X-Title': 'AI Podcast Producer'
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (parsed.error) {
-            reject(new Error(parsed.error.message || 'OpenRouter API error'));
-          } else {
-            resolve(parsed);
-          }
-        } catch (e) {
-          reject(new Error('Failed to parse response'));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
+    const raw = await response.text();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (_) { throw new Error(`OpenRouter returned invalid JSON (${response.status})`); }
+    if (!response.ok || parsed.error) throw new Error(parsed.error?.message || `OpenRouter request failed (${response.status})`);
+    if (!parsed.choices?.[0]?.message?.content) throw new Error('OpenRouter returned no content');
+    return parsed;
 }
 
 // Ensure ai_results table exists

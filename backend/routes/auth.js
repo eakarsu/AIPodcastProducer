@@ -32,8 +32,18 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, result.rows[0].password);
     if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: result.rows[0].id, role: result.rows[0].role || 'producer' }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: result.rows[0].id, email: result.rows[0].email, role: result.rows[0].role || 'producer' }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: { id: result.rows[0].id, email: result.rows[0].email, name: result.rows[0].name }, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/me', require('../middleware/auth'), async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, email, name, role, created_at FROM users WHERE id = $1', [req.user.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
