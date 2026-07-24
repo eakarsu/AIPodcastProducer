@@ -10,6 +10,12 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'postgres',
 });
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seed() {
   console.log('🎙️ Seeding AI Podcast Producer database...');
 
@@ -238,7 +244,7 @@ async function seed() {
   `);
 
   // Seed user
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
   await pool.query(
     'INSERT INTO users (email, password, name) VALUES ($1, $2, $3)',
     ['admin@podcastpro.com', hashedPassword, 'Admin User']
@@ -609,7 +615,7 @@ async function seed() {
   console.log('   15 show notes, 16 intros/outros, 16 questions, 16 calendar items,');
   console.log('   16 analytics, 16 channels, 15 templates, 15 transcripts,');
   console.log('   16 social posts, 16 SEO optimizations');
-  console.log('\n🔐 Login: admin@podcastpro.com / password123');
+  console.log('Demo login users provisioned from the local environment.');
 
   await pool.end();
 }
