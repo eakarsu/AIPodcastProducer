@@ -35,7 +35,7 @@ export default function Login({ onLogin }) {
         </div>
 
         <button className="autofill-btn" onClick={handleAutofill}>
-          ⚡ Quick Login — Click to fill credentials
+          ⚡ Auto Fill Demo Credentials
         </button>
 
         <form onSubmit={handleSubmit}>
